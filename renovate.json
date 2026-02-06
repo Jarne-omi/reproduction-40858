@@ -1,1 +1,51 @@
-{}
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:recommended",
+        ":preserveSemverRanges",
+        ":dependencyDashboard",
+        ":rebaseStalePrs",
+        ":enableVulnerabilityAlertsWithLabel('security')",
+        "group:recommended",
+        ":semanticCommits"
+    ],
+    "git-submodules": {
+        "enabled": true,
+        "ignoreDeps": [
+            "lib/bme280_driver",
+            "lib/STM32G4xx_HAL_Driver",
+            "lib/cmsis_core"
+        ]
+    },
+    "customManagers": [
+        {
+            "customType": "regex",
+            "fileMatch": [
+                "(^|/)\\.gitmodules$"
+            ],
+            "datasourceTemplate": "git-tags",
+            "matchStrings": [
+                "\\[submodule [\"'](?<depName>.*)[\"']\\][\\S\\s]+?url = https:\\/\\/github.com\\/(?<packageName>.+)\\.git(?:[\\n\\s]+?# renovate_tag: (?<currentValue>.+))?"
+            ],
+            "packageNameTemplate": "https://github.com/{{{packageName}}}",
+            "versioningTemplate": "regex:^(?<prefix>[A-Za-z0-9_-]*?)(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?<postfix>[A-Za-z0-9_-]*)$"
+        }
+    ],
+    "packageRules": [
+        {
+            "matchFileNames": [
+                ".gitmodules"
+            ],
+            "matchDatasources": [
+                "git-tags"
+            ],
+            "postUpgradeTasks": {
+                "commands": [
+                    "git submodule update --init --depth 1 {{{depName}}}",
+                    "git -C {{{depName}}} fetch origin tag {{{newVersion}}} --no-tags",
+                    "git -C {{{depName}}} checkout {{{newVersion}}}"
+                ]
+            }
+        }
+    ]
+}
